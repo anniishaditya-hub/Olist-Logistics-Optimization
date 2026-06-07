@@ -80,3 +80,33 @@ JOIN `k-project-495709.Olist_Project.Olist_Items` AS i ON o.order_id = i.order_i
 JOIN `k-project-495709.Olist_Project.Olist_Sellers` AS s ON i.seller_id = s.seller_id
 WHERE o.order_status = 'delivered' 
   AND o.order_delivered_customer_date IS NOT NULL;
+
+Golden Table 
+    
+SELECT 
+  o.order_id,
+  i.seller_id,
+  s.seller_city,
+  o.order_status,
+  -- Time calculations mapped for Excel pivot tables
+  DATE_DIFF(DATE(o.order_delivered_customer_date), DATE(o.order_purchase_timestamp), DAY) AS actual_delivery_days,
+  DATE_DIFF(DATE(o.order_estimated_delivery_date), DATE(o.order_purchase_timestamp), DAY) AS estimated_delivery_days,
+  -- SLA Breach Flag (1 = Late, 0 = On Time)
+  CASE 
+    WHEN DATE(o.order_delivered_customer_date) > DATE(o.order_estimated_delivery_date) THEN 1 
+    ELSE 0 
+  END AS sla_breach_flag,
+  ROUND(i.price, 2) AS item_revenue
+
+FROM 
+  `k-project-495709.Olist_Project.Olist_Orders` AS o
+INNER JOIN 
+  `k-project-495709.Olist_Project.Olist_Items` AS i 
+  ON o.order_id = i.order_id
+INNER JOIN 
+  `k-project-495709.Olist_Project.Olist_Sellers` AS s 
+  ON i.seller_id = s.seller_id
+
+WHERE 
+  o.order_status = 'delivered'
+  AND o.order_delivered_customer_date IS NOT NULL;
